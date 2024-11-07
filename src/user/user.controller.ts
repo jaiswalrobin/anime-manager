@@ -1,17 +1,19 @@
-// import { Controller } from '@nestjs/common';
-
-// @Controller('user')
-// export class UserController {}
-import { Controller, Get, Post, Body, Param, Delete } from '@nestjs/common';
+import { Controller, Get, UseGuards } from '@nestjs/common';
 import { UserService } from './user.service';
 import { User } from '.././user.entity';
-import { RegisterDto } from './dto/register.dto';
+// import { AuthGuard } from 'src/auth/auth.guard';
+import { ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 
-@Controller('users')
+@Controller('user')
+@UseGuards(JwtAuthGuard)
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
-  @Get()
+  @ApiOperation({ summary: 'get user' })
+  @ApiResponse({ status: 201, description: 'User created.' })
+  @ApiResponse({ status: 400, description: 'Bad request.' })
+  @Get('user-profile')
   findAll(): Promise<User[]> {
     return this.userService.findAll();
   }

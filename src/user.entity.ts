@@ -36,7 +36,7 @@ export class User {
   @Column({ nullable: true })
   emailVerificationTokenHash: string;
 
-  @Column({ nullable: true })
+  @Column({ type: 'timestamp', nullable: true })
   emailVerificationTokenExpiry: Date;
 
   @Column({ nullable: true })
