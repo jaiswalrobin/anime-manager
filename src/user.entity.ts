@@ -14,7 +14,6 @@ export class User {
   @Column({ nullable: true })
   lastName: string;
 
-  @Unique(['email'])
   @Column({ nullable: true, unique: true })
   email: string;
 

@@ -148,7 +148,7 @@ export class EmailService {
     resetToken: string,
   ): Promise<void> {
     // Construct the reset link with the reset token
-    const resetLink = `${this.configService.get<string>('APP_URL')}/reset-password?token=${resetToken}`;
+    const resetLink = `${this.configService.get<string>('APP_URL')}/auth/reset-password?token=${resetToken}`;
 
     const mailOptions: nodemailer.SendMailOptions = {
       from: this.configService.get<string>('SES_SENDER_EMAIL'), // Replace with your "from" email address

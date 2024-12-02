@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ConflictException,
   ForbiddenException,
   Injectable,
@@ -13,7 +14,7 @@ import { RegisterDto } from './dto/register.dto';
 
 import * as bcrypt from 'bcrypt';
 import * as crypto from 'crypto';
-import { JwtService } from '@nestjs/jwt';
+import { JsonWebTokenError, JwtService } from '@nestjs/jwt';
 
 import { LoginDto } from './dto/login.dto';
 
@@ -31,9 +32,11 @@ export class AuthService {
     private readonly emailService: EmailService,
     private configService: ConfigService,
   ) {}
-  async login(
-    loginDto: LoginDto,
-  ): Promise<{ accessToken: string; user: object }> {
+  async login(loginDto: LoginDto): Promise<{
+    accessToken: string;
+    user: object;
+    sessionExpiry: number;
+  }> {
     const { email, password } = loginDto;
 
     // Find the user by email
@@ -69,6 +72,13 @@ export class AuthService {
 
     const payload = { email: user.email, sub: user.id };
     const accessToken = this.jwtService.sign(payload);
+    // Decode the token and get the expiration time in seconds
+    const decodedToken = this.jwtService.decode(accessToken) as { exp: number };
+
+    console.log(decodedToken.exp, 'expppeprwpeorowejr');
+
+    // Convert the exp field (in seconds) to milliseconds
+    const sessionExpiry = decodedToken.exp * 1000;
 
     return {
       accessToken,
@@ -77,7 +87,9 @@ export class AuthService {
         firstName: user.firstName,
         lastName: user.lastName,
         id: user.id,
+        emailVerified: user.emailVerified,
       },
+      sessionExpiry,
     };
   }
 
@@ -134,7 +146,13 @@ export class AuthService {
       const user = await this.usersRepository.findOne({ where: { email } });
 
       if (!user) {
-        throw new UnauthorizedException('User not found');
+        throw new NotFoundException('User not found');
+      }
+
+      console.log(user, 'user......');
+
+      if (user.emailVerified) {
+        throw new BadRequestException('Email is already verified');
       }
 
       // Update the user's verified status
@@ -143,8 +161,15 @@ export class AuthService {
 
       console.log(`User with email ${email} has been verified`);
     } catch (error) {
-      console.log(error);
-      throw new UnauthorizedException(error.message);
+      if (error instanceof JsonWebTokenError) {
+        throw new BadRequestException('Invalid or expired token');
+      }
+      if (error instanceof NotFoundException) {
+        throw error; // already handled by NestJS
+      }
+      throw new InternalServerErrorException(
+        'An error occurred while verifying the email',
+      );
     }
   }
 

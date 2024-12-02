@@ -61,9 +61,31 @@ export class AuthController {
       // domain: this.configService.get<string>('CORS_ALLOWED_ORIGINS'),
       maxAge: 60 * 60 * 1000, // 1 hour
     });
-    res
+    res.status(HttpStatus.OK).json({
+      message: 'Login successfull',
+      user: result.user,
+      sessionExpiry: result.sessionExpiry,
+    });
+  }
+
+  // Logout route to clear the access-token cookie
+  @Post('logout')
+  @ApiOperation({ summary: 'Logout a user' })
+  @ApiResponse({ status: 200, description: 'Successfully logged out.' })
+  @ApiResponse({ status: 401, description: 'Unauthorized.' })
+  async logout(@Res() res: Response) {
+    // Clear the access-token cookie
+    res.clearCookie('access-token', {
+      httpOnly: true, // Ensures the cookie is HttpOnly
+      secure: process.env.NODE_ENV === 'production', // Set Secure flag for HTTPS
+      sameSite: 'lax',
+      path: '/', // Cookie should be available throughout the app
+    });
+
+    // Respond with a success message
+    return res
       .status(HttpStatus.OK)
-      .json({ message: 'Login successfull', user: result.user });
+      .json({ message: 'Logged out successfully' });
   }
 
   @Post('forgot-password')
@@ -90,7 +112,10 @@ export class AuthController {
   @ApiOperation({ summary: 'Verify a user email address' })
   @ApiResponse({ status: 200, description: 'Email verified successfully.' })
   @ApiResponse({ status: 400, description: 'Bad request.' })
-  async verifyEmail(@Query('token') token: string) {
-    return this.authService.verifyEmail(token);
+  async verifyEmail(@Query('token') token: string, @Res() res: Response) {
+    await this.authService.verifyEmail(token);
+    return res
+      .status(HttpStatus.OK)
+      .json({ message: 'Email verified successfully' });
   }
 }

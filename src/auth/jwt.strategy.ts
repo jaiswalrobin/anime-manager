@@ -11,7 +11,8 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     super({
       jwtFromRequest: ExtractJwt.fromExtractors([
         (request: Request) => {
-          return request?.cookies?.access_token;
+          console.log('yechala', request?.cookies?.access_token);
+          return request?.cookies?.['access-token'];
         },
       ]),
       ignoreExpiration: false,
@@ -20,6 +21,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   }
 
   async validate(payload: any) {
-    return { userId: payload.sub, firstName: payload.firstName };
+    console.log('validate-chala', payload);
+    return { userId: payload.sub, email: payload.email };
   }
 }
