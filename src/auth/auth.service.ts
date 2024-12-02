@@ -22,6 +22,7 @@ import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { EmailService } from 'src/email/email.service';
 import { ConfigService } from '@nestjs/config';
+import { UserRole } from 'src/enums/user-role.enum';
 
 @Injectable()
 export class AuthService {
@@ -70,7 +71,7 @@ export class AuthService {
 
     await this.incrementLoginCount(user.id);
 
-    const payload = { email: user.email, sub: user.id };
+    const payload = { email: user.email, id: user.id, role: user.role };
     const accessToken = this.jwtService.sign(payload);
     // Decode the token and get the expiration time in seconds
     const decodedToken = this.jwtService.decode(accessToken) as { exp: number };
@@ -119,6 +120,7 @@ export class AuthService {
       salt,
       emailVerificationTokenHash,
       emailVerificationTokenExpiry,
+      role: UserRole.STANDARD,
     });
 
     try {
@@ -134,6 +136,14 @@ export class AuthService {
       throw e;
       // throw new InternalServerErrorException();
     }
+  }
+
+  async assignAdminRole(userId: string) {
+    const user = await this.usersRepository.findOne({ where: { id: userId } });
+    if (!user) throw new NotFoundException('User not found');
+
+    user.role = UserRole.ADMIN;
+    return this.usersRepository.save(user);
   }
 
   async verifyEmail(token: string): Promise<void> {

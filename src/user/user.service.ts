@@ -15,6 +15,7 @@ export class UserService {
   }
 
   findOne(id: string): Promise<User> {
+    console.log(id, 'idCheck.....');
     return this.usersRepository.findOneBy({ id });
   }
 
